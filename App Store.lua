@@ -331,9 +331,5 @@ local function main()
         sleep(0.05)
     end
 end
- 
-local startupFile = fs.open("startup.lua", "w")
-startupFile.write('shell.run("OS.lua")')
-startupFile.close()
 
 main()
