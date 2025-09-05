@@ -2,7 +2,7 @@
 
 local githubBaseUrl = "https://raw.githubusercontent.com/antdoesthings/Computercraft-Scripts/main/"
 local apiBaseUrl = "https://api.github.com/repos/antdoesthings/Computercraft-Scripts/contents/App%20Store%20Apps/"
-local scriptName = "apps/AppStore.lua"
+local scriptName = "apps/App Store.lua"
 local appStoreUrl = githubBaseUrl .. "App%20Store.lua"
  
 local function updateScript()
