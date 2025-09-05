@@ -1,11 +1,12 @@
 -- blue
 
-local pastebinID = "RA9QRuCz"
+-- Configure your GitHub repository details here
+local githubBaseUrl = "https://raw.githubusercontent.com/antdoesthings/Computercraft-Scripts/refs/heads/main/App%20Store.lua"
 local scriptName = "apps/AppStore.lua"
+local appStoreUrl = githubBaseUrl .. scriptName
  
 local function updateScript()
-    local url = "https://pastebin.com/raw/" .. pastebinID
-    local response = http.get(url)
+    local response = http.get(appStoreUrl)
  
     if response then
         local newCode = response.readAll()
@@ -39,13 +40,12 @@ shell.run("]] .. scriptName .. [[")
  
         os.reboot()
     else
-        print("Failed to fetch update from Pastebin.")
+        print("Failed to fetch update from GitHub.")
     end
 end
  
 local function checkForUpdates()
-    local url = "https://pastebin.com/raw/" .. pastebinID
-    local response = http.get(url)
+    local response = http.get(appStoreUrl)
  
     if response then
         local newCode = response.readAll()
@@ -67,10 +67,10 @@ end
  
 checkForUpdates()
 
--- List of apps: {pastebinCode, NameofProgram, ColorToDisplay}
+-- List of apps: {filePathOnGithub, NameofProgram, ColorToDisplay}
 local apps = {
-    {"6dmvbgXQ", "OS", colors.cyan},
-    {"04vWQmiQ", "Settings", colors.black}
+    {"apps/OS.lua", "OS", colors.cyan},
+    {"apps/Settings.lua", "Settings", colors.black}
 }
 
 local function readSettings()
@@ -235,9 +235,9 @@ local function handleMouseClick(x, y)
         local yPos = startY + math.floor((i - 1) / iconsPerRow) * (iconHeight + iconPadding)
 
         if x >= xPos and x < xPos + iconWidth and y >= yPos and y < yPos + iconHeight then
-            local pastebinCode = app[1]
+            local appPathOnGithub = app[1]
             local appName = app[2]
-            local url = "https://pastebin.com/raw/" .. pastebinCode
+            local url = githubBaseUrl .. appPathOnGithub
             local response = http.get(url)
 
             if response then
