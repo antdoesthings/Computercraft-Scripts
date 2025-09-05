@@ -1,9 +1,9 @@
 -- blue
 
--- Configure your GitHub repository details here
-local githubBaseUrl = "https://raw.githubusercontent.com/antdoesthings/Computercraft-Scripts/refs/heads/main/App%20Store.lua"
+local githubBaseUrl = "https://raw.githubusercontent.com/antdoesthings/Computercraft-Scripts/main/"
+local apiBaseUrl = "https://api.github.com/repos/antdoesthings/Computercraft-Scripts/contents/App%20Store%20Apps/"
 local scriptName = "apps/AppStore.lua"
-local appStoreUrl = githubBaseUrl .. scriptName
+local appStoreUrl = githubBaseUrl .. "App%20Store.lua"
  
 local function updateScript()
     local response = http.get(appStoreUrl)
@@ -66,12 +66,58 @@ local function checkForUpdates()
 end
  
 checkForUpdates()
-
--- List of apps: {filePathOnGithub, NameofProgram, ColorToDisplay}
-local apps = {
-    {"apps/OS.lua", "OS", colors.cyan},
-    {"apps/Settings.lua", "Settings", colors.black}
-}
+ 
+local function getColorFromName(name)
+    local colorTable = {
+        white = colors.white,
+        orange = colors.orange,
+        magenta = colors.magenta,
+        lightBlue = colors.lightBlue,
+        yellow = colors.yellow,
+        lime = colors.lime,
+        pink = colors.pink,
+        gray = colors.gray,
+        lightGray = colors.lightGray,
+        cyan = colors.cyan,
+        purple = colors.purple,
+        blue = colors.blue,
+        brown = colors.brown,
+        green = colors.green,
+        red = colors.red,
+        black = colors.black
+    }
+    return colorTable[name] or colors.cyan
+end
+ 
+local function getAppsFromGithub()
+    local apps = {}
+    local response = http.get(apiBaseUrl)
+    if response then
+        local content = response.readAll()
+        response.close()
+        local data = textutils.unserializeJSON(content)
+        if type(data) == "table" then
+            for _, item in ipairs(data) do
+                if item.type == "file" and string.sub(item.name, -4) == ".lua" then
+                    local appUrl = githubBaseUrl .. item.path
+                    local appResponse = http.get(appUrl)
+                    if appResponse then
+                        local firstLine = appResponse.readLine() or ""
+                        appResponse.close()
+                        local appName = string.sub(item.name, 1, -5)
+                        local appColor = colors.cyan -- Default color
+                        local colorName = string.match(firstLine, "^%-%-%s*(%S+)")
+                        if colorName then
+                            appColor = getColorFromName(colorName)
+                        end
+                        table.insert(apps, {item.path, appName, appColor})
+                    end
+                end
+            end
+        end
+    end
+    return apps
+end
 
 local function readSettings()
     if not fs.exists("settings.txt") then
@@ -93,10 +139,8 @@ local function drawTopBar(name)
     term.setCursorPos(1, 1)
     term.clearLine()
  
-    -- Draw the name on the top left
     term.write(name)
  
-    -- Draw the day count and time on the top right
     local dayCount = os.day() - 1
     local time = textutils.formatTime(os.time(), false)
     local timeText = "Day " .. dayCount .. "   " .. time
@@ -141,7 +185,7 @@ local function getInstalledApps()
     return installedApps
 end
 
-local function drawApps()
+local function drawApps(apps)
     local w, h = term.getSize()
     local iconWidth = 5
     local iconHeight = 4
@@ -149,10 +193,8 @@ local function drawApps()
     local startX, startY = 2, 3
     local iconsPerRow = math.floor(w / (iconWidth + iconPadding))
 
-    -- Get the list of installed apps
     local installedApps = getInstalledApps()
 
-    -- Filter out apps that are already installed
     local availableApps = {}
     for _, app in ipairs(apps) do
         local appName = app[2]
@@ -168,9 +210,8 @@ local function drawApps()
         end
     end
 
-    -- Draw the available apps
     for i, app in ipairs(availableApps) do
-        local pastebinCode, appName, appColor = unpack(app)
+        local appPathOnGithub, appName, appColor = unpack(app)
         local x = startX + ((i - 1) % iconsPerRow) * (iconWidth + iconPadding)
         local y = startY + math.floor((i - 1) / iconsPerRow) * (iconHeight + iconPadding)
 
@@ -191,7 +232,7 @@ local function drawApps()
     end
 end
 
-local function handleMouseClick(x, y)
+local function handleMouseClick(x, y, apps)
     local w, h = term.getSize()
     local iconWidth = 5
     local iconHeight = 4
@@ -199,21 +240,18 @@ local function handleMouseClick(x, y)
     local startX, startY = 2, 3
     local iconsPerRow = math.floor(w / (iconWidth + iconPadding))
 
-	-- Check if the click is on the "-" button
     local barHeight = 3
     local iconWidth = 1
     local iconStart = math.floor((w - iconWidth) / 2) + 1
     local iconY = h - barHeight + 2
 
-	if x >= iconStart and x < iconStart + iconWidth and y == iconY then
-      	shell.run("OS.lua")
-    	return true
-	end
+    if x >= iconStart and x < iconStart + iconWidth and y == iconY then
+        shell.run("OS.lua")
+        return true
+    end
 
-    -- Get the list of installed apps
     local installedApps = getInstalledApps()
-
-    -- Filter out apps that are already installed
+ 
     local availableApps = {}
     for _, app in ipairs(apps) do
         local appName = app[2]
@@ -229,7 +267,6 @@ local function handleMouseClick(x, y)
         end
     end
 
-    -- Handle clicks on available apps
     for i, app in ipairs(availableApps) do
         local xPos = startX + ((i - 1) % iconsPerRow) * (iconWidth + iconPadding)
         local yPos = startY + math.floor((i - 1) / iconsPerRow) * (iconHeight + iconPadding)
@@ -244,12 +281,10 @@ local function handleMouseClick(x, y)
                 local newCode = response.readAll()
                 response.close()
 
-                -- Ensure the apps folder exists
                 if not fs.exists("apps") then
                     fs.makeDir("apps")
                 end
 
-                -- Save the app to the apps folder
                 local appPath = "apps/" .. appName .. ".lua"
                 local appFile = fs.open(appPath, "w")
                 if appFile then
@@ -276,19 +311,20 @@ local function handleMouseClick(x, y)
 end
 
 local function main()
-	local name = readSettings()
+    local name = readSettings()
     local running = true
-
+    local apps = getAppsFromGithub()
+    
     while running do
         drawBackground()
         drawTopBar(name)
         drawBottomBar()
-        drawApps()
+        drawApps(apps)
 
         os.startTimer(1)
         local event, button, x, y = os.pullEvent()
         if event == "mouse_click" then
-            if handleMouseClick(x, y) then
+            if handleMouseClick(x, y, apps) then
                 running = false
             end
         end
