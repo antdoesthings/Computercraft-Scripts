@@ -1,18 +1,19 @@
-local pastebinID = "6dmvbgXQ"
+local githubBaseUrl = "https://raw.githubusercontent.com/antdoesthings/Computercraft-Scripts/main/"
+local apiBaseUrl = "https://api.github.com/repos/antdoesthings/Computercraft-Scripts/contents/App%20Store%20Apps/"
 local scriptName = "OS.lua"
-
+local appStoreUrl = githubBaseUrl .. "OS.lua"
+ 
 local function updateScript()
-    local url = "https://pastebin.com/raw/" .. pastebinID
-    local response = http.get(url)
-
+    local response = http.get(appStoreUrl)
+ 
     if response then
         local newCode = response.readAll()
         response.close()
-
+ 
         if fs.exists("temp_update.lua") then
             fs.delete("temp_update.lua")
         end
-
+ 
         local tempFile = fs.open("temp_update.lua", "w")
         if tempFile then
             tempFile.write(newCode)
@@ -20,7 +21,7 @@ local function updateScript()
         else
             return
         end
-
+ 
         local startupFile = fs.open("startup.lua", "w")
         if startupFile then
             startupFile.write([[
@@ -34,26 +35,25 @@ shell.run("]] .. scriptName .. [[")
         else
             return
         end
-
+ 
         os.reboot()
     else
-        print("Failed to fetch update from Pastebin.")
+        print("Failed to fetch update from GitHub.")
     end
 end
-
+ 
 local function checkForUpdates()
-    local url = "https://pastebin.com/raw/" .. pastebinID
-    local response = http.get(url)
-
+    local response = http.get(appStoreUrl)
+ 
     if response then
         local newCode = response.readAll()
         response.close()
-
+ 
         local currentFile = fs.open(scriptName, "r")
         if currentFile then
             local currentCode = currentFile.readAll()
             currentFile.close()
-
+ 
             if newCode ~= currentCode then
                 updateScript()
             end
@@ -62,7 +62,7 @@ local function checkForUpdates()
         print("Failed to check for updates.")
     end
 end
-
+ 
 checkForUpdates()
 
 local function readSettings()
