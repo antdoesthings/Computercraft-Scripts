@@ -252,7 +252,22 @@ local function handleMouseClick(x, y)
                 term.setTextColor(colors.white)
                 term.clear()
                 term.setCursorPos(1, 1)
-                shell.run(appPath)
+                
+                -- Use pcall to handle potential errors when running the app
+                local ok, err = pcall(shell.run, appPath)
+                if not ok then
+                    term.setBackgroundColor(colors.red)
+                    term.setTextColor(colors.white)
+                    term.clear()
+                    term.setCursorPos(1, 1)
+                    print("Error running app: " .. tostring(err))
+                    print("Press any key to continue...")
+                    os.pullEvent("key")
+                end
+                
+                term.setBackgroundColor(colors.black)
+                term.setTextColor(colors.white)
+                term.clear()
                 return true
             end
         end
